@@ -9,6 +9,9 @@
 class UProjectileMovementComponent;
 class USphereComponent;
 class UStaticMeshComponent;
+class UPawnNoiseEmitterComponent;
+class USoundBase;
+class UParticleSystem;
 
 UCLASS()
 class COOPGAME_API ASGrenadeProjectile : public AActor
@@ -26,6 +29,22 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Projectile")
 	UProjectileMovementComponent* ProjectileMovement;
+
+	UFUNCTION(BlueprintCallable, Category = "Projectile")
+	void WhenDestroyed(AActor * act);
+
+	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
+	UParticleSystem * ExplosionEffect;
+
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
+	USoundBase* ExplosionSound;
+
+	/** Players for damage system to spawn */
+	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
+	TSubclassOf<AActor> TargetsClass;
+
+
 
 	
 	

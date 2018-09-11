@@ -8,7 +8,6 @@
 
 class USkeletalMeshComponent;
 class UParticleSystem;
-class UPrticParticleSystem;
 class ASGrenadeProjectile;
 /**
  * 
