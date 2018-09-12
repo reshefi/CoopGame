@@ -4,15 +4,12 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Public/SGrenadeProjectile.h"
 
-
-
 // Called when the game starts or when spawned
 void ASGrenadeWeapon::BeginPlay()
 {
 	Super::BeginPlay();
 
 }
-
 
 ASGrenadeWeapon::ASGrenadeWeapon()
 {
@@ -22,8 +19,6 @@ ASGrenadeWeapon::ASGrenadeWeapon()
 
 void ASGrenadeWeapon::Fire()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Fire Grenade"));
-
 	// try and fire a projectile
 	if (GrenadeProjectileClass)
 	{
