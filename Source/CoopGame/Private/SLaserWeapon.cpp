@@ -72,10 +72,11 @@ void ASLaserWeapon::Fire()
 			//ActorSpawnParams.Instigator = this;
 
 			// spawn the projectile at the muzzle
-			GetWorld()->SpawnActor<ALasersProjectile>(LaserProjectileClass, MuzzleLocation, MuzzleRotation, ActorSpawnParams);
+			ALasersProjectile * projectile = GetWorld()->SpawnActor<ALasersProjectile>(LaserProjectileClass, MuzzleLocation, MuzzleRotation, ActorSpawnParams);
+			projectile->MainImpactEffect = this->DefaultImpactEffect;
 		}
 
-		
+		PlayFireEffect();
 		
 
 		LastFireTime = GetWorld()->TimeSeconds;

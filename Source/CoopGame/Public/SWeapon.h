@@ -33,6 +33,8 @@ protected:
 	
 
 	void PlayFireEffect(FVector TracerEndPoint);
+	
+	void PlayFireEffect();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 	TSubclassOf<UDamageType> DamageType;

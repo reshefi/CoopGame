@@ -121,9 +121,9 @@ void ASWeapon::StopFire()
 
 void ASWeapon::PlayFireEffect(FVector TracerEndPoint)
 {
-	if (MuzzleEffect) {
+	/*if (MuzzleEffect) {
 		UGameplayStatics::SpawnEmitterAttached(MuzzleEffect, MeshComp, MuzzleSocketName);
-	}
+	} */
 
 	if (TracerEffect) {
 		FVector MuzzleLocation = MeshComp->GetSocketLocation(MuzzleSocketName);
@@ -134,6 +134,31 @@ void ASWeapon::PlayFireEffect(FVector TracerEndPoint)
 		}
 	}
 
+	// try and play the sound if specified
+	/*if (ExplosionSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, ExplosionSound, GetActorLocation());
+	}
+
+	APawn* MyOwner = Cast<APawn>(GetOwner());
+	if (MyOwner)
+	{
+		APlayerController* PC = Cast<APlayerController>(MyOwner->GetController());
+		if (PC)
+		{
+			PC->ClientPlayCameraShake(FireCamShake);
+		}
+	} */
+	PlayFireEffect();
+}
+
+
+void ASWeapon::PlayFireEffect()
+{
+	if (MuzzleEffect) {
+		UGameplayStatics::SpawnEmitterAttached(MuzzleEffect, MeshComp, MuzzleSocketName);
+	}
+	
 	// try and play the sound if specified
 	if (ExplosionSound)
 	{

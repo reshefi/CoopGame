@@ -17,7 +17,6 @@ AMyStaticMeshWithEffectsTest::AMyStaticMeshWithEffectsTest()
 	MeshObject = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	MeshObject->SetupAttachment(RootComponent);
 	IceEffect = CreateDefaultSubobject<AMyIceEffectActor>(TEXT("IceEffect"));
-	
 }
 
 
@@ -26,7 +25,7 @@ void AMyStaticMeshWithEffectsTest::BeginPlay()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Began playing ..!!"));
 	IceEffect->SetMesh(MeshObject);
-	IceEffect->BeginPlay();
+	//IceEffect->BeginPlay();
 	Super::BeginPlay();
 	UE_LOG(LogTemp, Warning, TEXT("Changed Mesh ..!!"));
 }

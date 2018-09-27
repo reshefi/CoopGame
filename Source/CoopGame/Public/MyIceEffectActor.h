@@ -13,6 +13,7 @@ class UTimelineComponent;
 class UCurveFloat;
 class UMaterialInstanceDynamic;
 class USphereComponent;
+class USkeletalMeshComponent;
 
 UCLASS()
 class COOPGAME_API AMyIceEffectActor : public AActor
@@ -29,6 +30,8 @@ public:
 	UFUNCTION()
 	void SetMesh(UStaticMeshComponent * MyMesh);
 	
+	UFUNCTION()
+	void AddSkeletalMesh(TArray<USkeletalMeshComponent *> SMesh);
 	
 	UTimelineComponent * MyTimeline;
 
@@ -51,12 +54,14 @@ public:
 	UFUNCTION()
 		void OnTimelineFinished();
 
-	UPROPERTY()
-		TArray<UMaterialInstanceDynamic *>  mats;
+	UFUNCTION()
+		void OnLaserBeamStaticMeshHit();
+	UFUNCTION()
+	void OnLaserBeamSkeletalMeshHit();
 
 	/** called when mesh hits something */
 	UFUNCTION()
-		void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	//void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 	void TriggerEffect();
 	
@@ -69,6 +74,8 @@ protected:
 	
 	UPROPERTY(EditAnywhere, Category = "Timeline")
 	UStaticMeshComponent * MeshEffectApplied;
-	// Called when the game starts or when spawned
+
+	UPROPERTY(EditAnywhere, Category = "Timeline")
+	TArray<USkeletalMeshComponent *> SkeletalMeshApplied;
 
 };
