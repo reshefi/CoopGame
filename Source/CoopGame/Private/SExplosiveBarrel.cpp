@@ -10,6 +10,7 @@
 #include "GameFramework/DamageType.h"
 #include "GameFramework/Controller.h"
 #include "PhysicsEngine/RadialForceComponent.h"
+#include "UnrealNetwork.h"
 
 // Sets default values
 ASExplosiveBarrel::ASExplosiveBarrel()
@@ -23,39 +24,39 @@ ASExplosiveBarrel::ASExplosiveBarrel()
 	AreaOfDamage->SetSphereRadius(200.0f);
 	BarrelMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Barrel Mesh"));
 	BarrelMesh->SetupAttachment(RootComponent);
+	BarrelMesh->SetSimulatePhysics(true);
+	BarrelMesh->SetCollisionObjectType(ECC_PhysicsBody);
 	AreaOfDamage->SetupAttachment(BarrelMesh);
 	KineticRadialImpact = CreateDefaultSubobject<URadialForceComponent>("Kinetic Effect");
 	ForceUp = 200000;
+	SetReplicates(true);
+	SetReplicateMovement(true);
 	//GetCapsuleComponent()->SetCollisionResponseToChannel(COLLISION_WEAPON, ECR_Ignore);
 	//AreaOfDamage->SetupAttachment(BarrelMesh);
 
 }
 
-void ASExplosiveBarrel::OnDamageTaken(USHealthComponent * MyHealthComp, float Health, float HealthDelta,
+void ASExplosiveBarrel::OnDamageTaken(USHealthComponent * OwningHealthComp, float Health, float HealthDelta,
 	const  UDamageType* DamageType,  AController* InstigatedBy, AActor* DamageCauser)
 {
+	UE_LOG(LogTemp, Warning, TEXT("My Health is: %f "), Health);
+	UE_LOG(LogTemp, Warning, TEXT("Exploded is: %s"),  (bExploded ? TEXT("True") : TEXT("False")));
 	if (Health <= 0.0f && !bExploded)
 	{
-		// Die !
-		bExploded = true;
+		UE_LOG(LogTemp, Warning, TEXT("La La"));
 		// play particle effect...
-		if (BlastEffect) {
-			FRotator ActorRotator = GetActorRotation();
-			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BlastEffect, GetActorLocation(), ActorRotator);
-		}
-
-		if (MaterialPostBlast) {
-			BarrelMesh->SetMaterial(0, MaterialPostBlast);
-		}
-		//Now I push away nearby physics actors...
-		
+		MulticastExplode();
+			//Now I push away nearby physics actors...
 		if (KineticRadialImpact) {
 			KineticRadialImpact->RegisterComponent();
 			KineticRadialImpact->SetWorldLocation(GetActorLocation());
 			KineticRadialImpact->SetWorldRotation(GetActorRotation());
-			KineticRadialImpact->Radius = 1700;
-			KineticRadialImpact->ForceStrength = 100000;
-			KineticRadialImpact->ImpulseStrength = 100000;
+			KineticRadialImpact->Radius = 700;
+			KineticRadialImpact->ForceStrength = 1000;
+			KineticRadialImpact->ImpulseStrength = 1000;
+			KineticRadialImpact->bImpulseVelChange = true;
+			KineticRadialImpact->bAutoActivate = false;
+			KineticRadialImpact->bIgnoreOwningActor = true;
 			KineticRadialImpact->AttachTo(this->GetRootComponent(), NAME_None, EAttachLocation::KeepWorldPosition);
 			KineticRadialImpact->FireImpulse();
 		}
@@ -67,6 +68,62 @@ void ASExplosiveBarrel::OnDamageTaken(USHealthComponent * MyHealthComp, float He
 	}
 }
 
+void ASExplosiveBarrel::Explode()
+{
+	// Die !
+	/*bExploded = true;
+
+	if (BlastEffect) {
+		FRotator ActorRotator = GetActorRotation();
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BlastEffect, GetActorLocation(), ActorRotator);
+	} else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("BlastEffect null or not found"));
+	}
+
+	if (MaterialPostBlast) {
+		BarrelMesh->SetMaterial(0, MaterialPostBlast);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("MaterialPostBlast null or not found"));
+	}*/
+}
+
+
+void ASExplosiveBarrel::MulticastExplode_Implementation()
+{
+	// Die !
+	bExploded = true;
+	if (Role == ROLE_Authority) {
+		UE_LOG(LogTemp, Warning, TEXT("Authority"));
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("Client"));
+	}
+	if (BlastEffect) {
+		FRotator ActorRotator = GetActorRotation();
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BlastEffect, GetActorLocation(), ActorRotator);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("BlastEffect null or not found"));
+	}
+
+	if (MaterialPostBlast) {
+		BarrelMesh->SetMaterial(0, MaterialPostBlast);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("MaterialPostBlast null or not found"));
+	}
+}
+
+bool ASExplosiveBarrel::MulticastExplode_Validate()
+{
+	return true;
+}
+
 // Called when the game starts or when spawned
 void ASExplosiveBarrel::BeginPlay()
 {
@@ -75,4 +132,11 @@ void ASExplosiveBarrel::BeginPlay()
 }
 
 
-
+void ASExplosiveBarrel::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ASExplosiveBarrel, BlastEffect);
+	DOREPLIFETIME(ASExplosiveBarrel, MaterialPostBlast);
+	DOREPLIFETIME(ASExplosiveBarrel, bExploded);
+	DOREPLIFETIME(ASExplosiveBarrel, BarrelMesh); 
+}

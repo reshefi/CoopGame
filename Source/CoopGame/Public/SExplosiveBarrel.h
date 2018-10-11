@@ -27,7 +27,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	float DefaultHealth;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent * BarrelMesh;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -37,18 +37,21 @@ protected:
 	URadialForceComponent * KineticRadialImpact;
 
 	UFUNCTION()
-	void OnDamageTaken (USHealthComponent * MyHealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+	void OnDamageTaken (USHealthComponent * OwningHealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+
+	UFUNCTION()
+	void Explode();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class USHealthComponent* HealthComp;
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	bool bExploded;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, category = "Impact")
+	UPROPERTY(  Replicated, EditDefaultsOnly, BlueprintReadOnly, category = "Impact")
 	UParticleSystem * BlastEffect;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, category = "Impact")
+	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadOnly, category = "Impact")
 	UMaterial * MaterialPostBlast;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, category = "Impact")
@@ -57,6 +60,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, category = "Impact")
 	float  RadialForce;
 
+	UFUNCTION(NetMulticast , Reliable, WithValidation)
+	void MulticastExplode();
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

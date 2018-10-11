@@ -11,6 +11,25 @@ class UParticleSystem;
 class USoundBase;
 class UCameraShake;
 
+//Contains information of a single hitscan weapon linetrace
+USTRUCT()
+struct FHitScanTrace
+{
+	GENERATED_BODY()
+
+public:
+
+	UPROPERTY()
+		TEnumAsByte<EPhysicalSurface> SurfaceType;
+
+	UPROPERTY()
+		FVector_NetQuantize TraceTo;
+
+	UPROPERTY()
+		int8 Seed = 0; //Make a firing increase counter for Change of state detection
+
+};
+
 UCLASS()
 class COOPGAME_API ASWeapon : public AActor
 {
@@ -33,6 +52,8 @@ protected:
 	
 
 	void PlayFireEffect(FVector TracerEndPoint);
+
+	void PlayImpactEffects(EPhysicalSurface SurfaceType, FVector ImpactPoint);
 	
 	void PlayFireEffect();
 
@@ -77,6 +98,14 @@ protected:
 	// Derived from RateOfFire
 	float TimeBetweenShots;
 	
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerFire();
+
+	UPROPERTY(ReplicatedUsing = OnRep_HitScanTrace)
+	FHitScanTrace HitScanTrace;
+
+	UFUNCTION()
+	void OnRep_HitScanTrace();
 public:	
 
 	void StartFire();
