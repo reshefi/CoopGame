@@ -8,6 +8,8 @@
 
 class UStaticMeshComponent;
 class USHealthComponent;
+class USphereComponent;
+class USoundCue;
 
 UCLASS()
 class COOPGAME_API ASTrackerBot : public APawn
@@ -22,11 +24,16 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	bool IsFirstPointTouched;
+
 	UPROPERTY(VisibleDefaultsOnly, Category = "Component")
 	UStaticMeshComponent * MeshComp;
 
 	UPROPERTY(VisibleDefaultsOnly, Category = "Component")
 	USHealthComponent * HealthComp;
+
+	UPROPERTY(VisibleDefaultsOnly, Category = "Component")
+	USphereComponent * SphereComp;
 
 	//Get Next Point in navigation path.
 	UFUNCTION()
@@ -66,8 +73,24 @@ protected:
 
 	void SelfDestruct();
 
+	FTimerHandle TimerHandle_SelfDamage;
+
+	void DamageSelf();
+
+	bool bStartedSelfDestruction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "TrackerBot")
+	float SelfDamageInterval;
+
+	UPROPERTY(EditDefaultsOnly, Category = "TrackerBot")
+	USoundCue * SelfDestructSound;
+
+	UPROPERTY(EditDefaultsOnly, Category = "TrackerBot")
+	USoundCue * ExplodeSound;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	virtual void NotifyActorBeginOverlap(AActor* OtherActor) override;
 };
