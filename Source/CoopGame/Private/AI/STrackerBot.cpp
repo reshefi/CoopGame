@@ -66,11 +66,9 @@ FVector ASTrackerBot::GetNextPathPoint()
 	ACharacter* PlayerPawn = UGameplayStatics::GetPlayerCharacter(this, 0);
 
 	UNavigationPath* NavPath = UNavigationSystem::FindPathToActorSynchronously(this, GetActorLocation(), PlayerPawn);
-	if (NavPath) {
-		if (NavPath->PathPoints.Num() > 1) {
+	if (NavPath && NavPath->PathPoints.Num() > 1) {
 			// Return next point in the path
 			return NavPath->PathPoints[1];
-		}
 	}
 	// Failed to find path
 	return GetActorLocation();
@@ -213,6 +211,7 @@ void ASTrackerBot::Tick(float DeltaTime)
 
 void ASTrackerBot::NotifyActorBeginOverlap(AActor* OtherActor)
 {
+	Super::NotifyActorBeginOverlap(OtherActor);
 	if (!bStartedSelfDestruction && !bExploded) {
 		ASCharacter * PlayerPawn = Cast<ASCharacter>(OtherActor);
 		if (PlayerPawn)
