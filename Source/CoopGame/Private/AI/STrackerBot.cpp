@@ -14,6 +14,15 @@
 #include "SCharacter.h"
 #include "TimerManager.h"
 #include "Sound/SoundCue.h"
+#include "Engine/World.h"
+
+static int32 DebugTrackerBotDrawing = 0;
+
+FAutoConsoleVariableRef CVARDebugTrackerBotDrawing(
+	TEXT("COOP.DebugTrackerBot"),
+	DebugTrackerBotDrawing,
+	TEXT("Draw Debug Lines for TrackerBots"),
+	ECVF_Cheat);
 
 // Sets default values
 ASTrackerBot::ASTrackerBot()
@@ -29,7 +38,7 @@ ASTrackerBot::ASTrackerBot()
 	HealthComp->OnHealthChanged.AddDynamic(this, &ASTrackerBot::HandleTakeDamage);
 
 	SphereComp = CreateDefaultSubobject<USphereComponent>(TEXT("SphereDamageComp"));
-	ExplosionRadius = 200;
+	ExplosionRadius = 350;
 	SphereComp->SetSphereRadius(ExplosionRadius);
 	SphereComp->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	SphereComp->SetCollisionResponseToAllChannels(ECR_Ignore);
@@ -62,13 +71,40 @@ void ASTrackerBot::BeginPlay()
 
 FVector ASTrackerBot::GetNextPathPoint()
 {
-	// Hack, to get player location
-	ACharacter* PlayerPawn = UGameplayStatics::GetPlayerCharacter(this, 0);
+	//Finding the best actor to attack
+	AActor * BestTarget = nullptr;
+	float NearestTargetDistance = FLT_MAX;
 
-	UNavigationPath* NavPath = UNavigationSystem::FindPathToActorSynchronously(this, GetActorLocation(), PlayerPawn);
-	if (NavPath && NavPath->PathPoints.Num() > 1) {
+	for (FConstPawnIterator It = GetWorld()->GetPawnIterator(); It; ++It)
+	{
+		APawn* TestPawn = It->Get();
+		if (TestPawn == nullptr || USHealthComponent::IsFriendly(TestPawn, this))
+		{
+			continue;
+		}
+
+		USHealthComponent* TestPawnHealthComp = Cast<USHealthComponent>(TestPawn->GetComponentByClass(USHealthComponent::StaticClass()));
+		if (TestPawnHealthComp && TestPawnHealthComp->GetHealth() > 0.0f)
+		{
+			float Distance = (TestPawn->GetActorLocation() - GetActorLocation()).Size();
+
+			if (Distance < NearestTargetDistance) 
+			{
+				BestTarget = TestPawn;
+				NearestTargetDistance = Distance;
+			}
+		}
+	}
+
+	if (BestTarget)
+	{
+		UNavigationPath* NavPath = UNavigationSystem::FindPathToActorSynchronously(this, GetActorLocation(), BestTarget);
+		GetWorldTimerManager().ClearTimer(TimerHandle_RefreshPath);
+		GetWorldTimerManager().SetTimer(TimerHandle_RefreshPath, this, &ASTrackerBot::RefreshPath, 5.0f, false, 0.0f);
+		if (NavPath && NavPath->PathPoints.Num() > 1) {
 			// Return next point in the path
 			return NavPath->PathPoints[1];
+		}
 	}
 	// Failed to find path
 	return GetActorLocation();
@@ -86,11 +122,11 @@ void ASTrackerBot::HandleTakeDamage(USHealthComponent * OwningHealthComp, float 
 	//It could still be null if nobody set a material in the first place
 	if (MatInst)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Changing Material"));
+		
 		MatInst->SetScalarParameterValue("LastTimeDamageTaken", GetWorld()->TimeSeconds);
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Health %s of %s"), *FString::SanitizeFloat(Health), *GetName());
+	//UE_LOG(LogTemp, Warning, TEXT("Health %s of %s"), *FString::SanitizeFloat(Health), *GetName());
 
 	// Explode on hitpoints == 0
 	if (Health <= 0.0f) {
@@ -124,8 +160,11 @@ void ASTrackerBot::SelfDestruct()
 		// Apply Damage !
 		UGameplayStatics::ApplyRadialDamage(this, ExplosionDamage, GetActorLocation(), ExplosionRadius, nullptr, IgnoredActors, this, GetInstigatorController(), true);
 
-		DrawDebugSphere(GetWorld(), GetActorLocation(), ExplosionRadius, 12, FColor::Red, false, 2.0f, 0, 1.0f);
-
+		if (DebugTrackerBotDrawing)
+		{
+			DrawDebugSphere(GetWorld(), GetActorLocation(), ExplosionRadius, 12, FColor::Red, false, 2.0f, 0, 1.0f);
+		}
+		
 		//Delete Actor immediately
 		//Destroy();
 		SetLifeSpan(2.0f);
@@ -135,6 +174,11 @@ void ASTrackerBot::SelfDestruct()
 void ASTrackerBot::DamageSelf()
 {
 	UGameplayStatics::ApplyDamage(this, 20, GetInstigatorController(), this, nullptr);
+}
+
+void ASTrackerBot::RefreshPath()
+{
+	NextPathPoint = GetNextPathPoint();
 }
 
 // Called every frame
@@ -148,7 +192,10 @@ void ASTrackerBot::Tick(float DeltaTime)
 
 		if (DistanceToTarget <= RequiredDistanceToTarget) {
 			NextPathPoint = GetNextPathPoint();
-			DrawDebugString(GetWorld(), GetActorLocation(), "Target Reached!");
+			if (DebugTrackerBotDrawing)
+			{
+				DrawDebugString(GetWorld(), GetActorLocation(), "Target Reached!");
+			}
 		}
 		else {
 			//UE_LOG(LogTemp, Warning, TEXT("Distance to target is: %f"), DistanceToTarget);
@@ -197,15 +244,21 @@ void ASTrackerBot::Tick(float DeltaTime)
 					ForceCorrection *= (MovementForce  * 5); 
 					MeshComp->AddForce(ForceCorrection, NAME_None, bUseVelocityChange);
 					//DrawDebugString(GetWorld(), MeshComp->GetComponentLocation(), FString::Printf(TEXT("DeltaX is %f\nDeltaY is %f"), DeltaX, DeltaY), this, FColor::Red,0);
-					DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + ForceCorrection, 32, FColor::Blue, false, 0.0f, 0, 1.0f);
+					if (DebugTrackerBotDrawing) {
+						DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + ForceCorrection, 32, FColor::Blue, false, 0.0f, 0, 1.0f);
+					}
 				}
 			}
 			ForceDirection *= MovementForce;
 			MeshComp->AddForce(ForceDirection, NAME_None, bUseVelocityChange);
 			//Note lifetime = 0 because we are in a Tick function.
-			DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + ForceDirection, 32, FColor::Yellow, false, 0.0f, 0, 1.0f);
+			if (DebugTrackerBotDrawing) {
+				DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + ForceDirection, 32, FColor::Yellow, false, 0.0f, 0, 1.0f);
+			}
 		}
-		DrawDebugSphere(GetWorld(), NextPathPoint, 20, 12, FColor::Yellow, false, 0.0f, 1.0f);
+		if (DebugTrackerBotDrawing) {
+			DrawDebugSphere(GetWorld(), NextPathPoint, 20, 12, FColor::Yellow, false, 0.0f, 1.0f);
+		}
 	}
 }
 
@@ -214,7 +267,7 @@ void ASTrackerBot::NotifyActorBeginOverlap(AActor* OtherActor)
 	Super::NotifyActorBeginOverlap(OtherActor);
 	if (!bStartedSelfDestruction && !bExploded) {
 		ASCharacter * PlayerPawn = Cast<ASCharacter>(OtherActor);
-		if (PlayerPawn)
+		if (PlayerPawn && !USHealthComponent::IsFriendly(OtherActor, this))
 		{
 			// We overlap with a player
 			if (Role == ROLE_Authority)

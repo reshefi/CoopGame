@@ -73,9 +73,7 @@ protected:
 	UPROPERTY(VisibleDefaultsOnly, Category = "Player")
 	FName WeaponAttackSocketName;
 
-	 void StartFire();
-
-	 void StopFire();
+	
 
 public:	
 
@@ -87,5 +85,10 @@ public:
 
 	virtual FVector GetPawnViewLocation() const override;
 	
-	
+	//We want to expose the firing mechanism to the behavior tree, hence the public visibility
+	UFUNCTION(BlueprintCallable, Category = "Player")
+	void StartFire();
+
+	UFUNCTION(BlueprintCallable, Category = "Player")
+	void StopFire();
 };
